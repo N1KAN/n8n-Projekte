@@ -1,0 +1,348 @@
+{
+  "name": "Sora 2 Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d975cc28-f91b-4eaf-898a-7a56c4bbd4e7",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const min = 1; // minimum value\nconst max = 7; // maximum value\nconst randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;\nreturn [{ json: { randomNumber } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "85395421-21a1-4d92-9d1f-8a17d2b1a87a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=generate a prompt for {{ $json.randomNumber }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an AI that generates random video prompts for short form content.\nYour ONLY output must strictly follow this JSON structure:\n\n{\n  \"title\": \"Exciting, descriptive, simplistic title here\",\n  \"description\": \"Short, few sentence description based on the story\",\n  \"prompt\": \"AI video generation prompt here\"\n}\n\nGuidelines:\n- The \"title\" must be short, eye-catching, and easy to understand.\n- The \"description\" should be 1-3 sentences summarizing the crazy event in a fun, engaging way. The speaking language is German.\n- The \"prompt\" must be a detailed AI video generation prompt describing the scene from the primary video types below. Always choose a random one.\n- Never break JSON format. Never add extra text or explanation outside the JSON.\n- Never repeat a video, always cycle through them.\n\n1. Home camera video of a baby in a onesie curiously climbing up to a high open window when a dog comes up from behind and grabs the baby and pulls it down from the window backward to the floor to stop the baby from falling out. After this, the mom comes rushing in to check what happened.\n\n2. Grocery store footage of a man jumping while pushing his shopping cart, then losing control and knocking over all of the shelves in the store\n\n3. Home camera video of a person and their dog and cat, there is a big mess on the floor and the cat is meowing and pointing at the dog, the dog looks guilty and the owner is listening to the cat\n\n4. Home camera video of a man on the toilet, when suddenly an animal smashes through the bathroom window and runs around inside, chaotic\n\n5. A kid is curiously playing near an electrical outlet which zaps when touched, when a dog comes over and pulls the kid away, the parents come in afterward\n\n6. Low quality wobbly smartphone footage of a dinner table with lots of people, when suddenly a cat jumps from a balcony in the home onto the chandelier and swings from it, when the chandelier falls onto the table\n\n7. Low quality steady smartphone footage of a couple being married and about to cut a massive wedding cake with a dog looking at it, when suddenly before they cut the cake the dog jumps up and bites the cake and everyone freaks out"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        16
+      ],
+      "id": "23d6c245-7450-4912-9480-960d9b318b61",
+      "name": "Idea Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        176
+      ],
+      "id": "61a61cf1-f0d3-4d75-a643-9722c10a37fb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tfYVwf31BOgOim1T",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        176
+      ],
+      "id": "d7c2c9f4-0859-4e01-82e3-836408bc752b",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"A short, exciting, descriptive, simplistic YouTube Shorts title\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"1-3 sentences summarizing the crazy water event\"\n    },\n    \"prompt\": {\n      \"type\": \"string\",\n      \"description\": \"A detailed AI video generation prompt\"\n    }\n  },\n  \"required\": [\"title\", \"description\", \"prompt\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        224
+      ],
+      "id": "6a0e0d73-5568-407c-b44e-a16c542cf754",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.kie.ai/api/v1/jobs/createTask",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"sora-2-text-to-video\",\n  \"callBackUrl\": \"https://your-domain.com/api/callback\",\n  \"input\": {\n    \"prompt\": \"{{ $json.output.prompt }}\",\n    \"aspect_ratio\": \"portrait\",\n    \"n_frames\": \"10\",\n    \"remove_watermark\": true\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        768,
+        16
+      ],
+      "id": "32cb1fca-aa31-4b67-aa8c-01bb550dc83f",
+      "name": "Create",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9xl0gQa3S3VXbx77",
+          "name": "Kie AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 400
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        16
+      ],
+      "id": "1fe13e21-6da2-4d54-9926-f460d2f36cd9",
+      "name": "Wait",
+      "webhookId": "682abd87-29df-4b70-8cae-798f1a1a1c89"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        16
+      ],
+      "id": "769d4aff-f003-49f1-b7fd-8a27e9e253ad",
+      "name": "GET",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9xl0gQa3S3VXbx77",
+          "name": "Kie AI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ JSON.parse($json.data.resultJson).resultUrls[0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        16
+      ],
+      "id": "16166073-5df2-4fed-8171-7bd65f75cbd0",
+      "name": "GET Link"
+    },
+    {
+      "parameters": {
+        "name": "mein_Ki_Video",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1P5u8iQpiEQTid12WsHp4MPZ_sUCe-09y",
+          "mode": "list",
+          "cachedResultName": "TikTok",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1P5u8iQpiEQTid12WsHp4MPZ_sUCe-09y"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1584,
+        16
+      ],
+      "id": "14c31340-4ecc-48b8-ac1d-69df48162b52",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eUeP5ePsKBKmx9Go",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idea Agent": {
+      "main": [
+        [
+          {
+            "node": "Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "GET",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET": {
+      "main": [
+        [
+          {
+            "node": "GET Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Link": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 5
+  },
+  "versionId": "bb324f2c-dd58-46ee-b363-fcaace7b8018",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98d9c3a8e6cf9c2d8239846b0856d82556234ab318ea0cce69cf3ae11b514514"
+  },
+  "id": "PxeGEN05ZOu2JaGf",
+  "tags": []
+}

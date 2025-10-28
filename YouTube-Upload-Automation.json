@@ -1,0 +1,362 @@
+{
+  "name": "Youtube Uploader Nulty Little",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "13Sg95tuNyvqFcMJ5XWCMbkkoAdBq-ubT",
+          "mode": "list",
+          "cachedResultName": "NultyLittle",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/13Sg95tuNyvqFcMJ5XWCMbkkoAdBq-ubT"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4401653a-e1de-4ffa-822e-1569e28c6d1b",
+      "name": "Google Drive Trigger",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eUeP5ePsKBKmx9Go",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3b77f412-4a5f-4fad-8678-f3af0da474c6",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eUeP5ePsKBKmx9Go",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Google Drive Trigger').item.json.id }}",
+        "regionCode": "DE",
+        "categoryId": "=10",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        464,
+        0
+      ],
+      "id": "3c4bf469-1846-4d1f-8e84-89e7c8ab517d",
+      "name": "Upload a video",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "5fgmBi9CVnv1eawf",
+          "name": "Nulty Little"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert in YouTube SEO and music promotion, specializing in generating engaging titles, tags, and description hashtags for the YouTube channel \"ThommyEight\". Your task is to process a raw file name and generate a compelling YouTube title, a comprehensive list of tags, and a separate list of description hashtags.\n\nConstraints & Rules for Output Generation:\n\nTitle:\nMust be captivating and professional, following the \"ThommyEight\" video style (e.g., \"Icon – Epic Orchestral Noizy String Type Beat | Cinematic Choir Rap Instrumental\").\nMust not exceed 100 characters.\nIf the file name contains \"short,\" the title must include the hashtag #short and one other relevant, self-generated hashtag (e.g., #Dancehall).\n\nTags:\nThe total character length of all tags combined must be between 400 and 490 characters.\nGenerate a comma-separated list of tags.\nEach individual tag should be a single keyword or a short phrase without spaces, unless it is a well-known, multi-word keyword (e.g., \"Type Beat\").\nDo not generate tags with multiple words that are not well-established keywords (e.g., avoid \"Du Hoffst\" as a single tag; use \"Du\" and \"Hoffst\" as separate tags).\nThe list must include every single word from the generated title as a separate tag.\nThe list must also include the following mandatory tags: ThommyEight, Type Beat, Instrumental.\nFill the remaining character space with additional relevant tags based on the file name's keywords, genre, mood, artists, and year. Add synonyms and related terms to broaden the target audience.\nAvoid redundant or very similar tags (e.g., \"Hope\" and \"Hoffnung\" should not be used together unless absolutely necessary to meet the character limit).\n\nDescription Hashtags:\nGenerate 3 to 5 highly relevant hashtags that are short, concise, and easily recognizable by YouTube.\nThese must be a space-separated list and should not be a duplicate of the tags in the tags list.\n\nFinal Output Format:\nThe final output must be in this exact format. Do not add any extra text or explanations.\nTitle: [Your generated title here]\nTags: [Your generated, comma-separated list of tags here]\nDescriptionHashtags: [Your generated, space-separated hashtags here]\n\nNow, please process the following file name: {{ $('Google Drive Trigger').item.json.name }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        192
+      ],
+      "id": "7ea9f076-84ff-48e7-afd9-10fb26c83f70",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        208
+      ],
+      "id": "827a02ba-c60a-434d-9e53-794ecc409e06",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tfYVwf31BOgOim1T",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nimm den Text-Output vom vorherigen KI-Knoten\nconst aiOutput = $input.first().json.output;\n\n// Wir ersetzen die Zeichenfolge \"\\\\n\" durch einen echten Zeilenumbruch\nconst cleanOutput = aiOutput.replace(/\\\\n/g, '\\n');\n\n// Extrahiere die einzelnen Teile durch Splitting\nconst titlePart = cleanOutput.split('Tags:')[0];\nconst tagsPart = cleanOutput.split('DescriptionHashtags:')[0].split('Tags:')[1];\nconst hashtagsPart = cleanOutput.split('DescriptionHashtags:')[1];\n\n// Bereinige die extrahierten Teile und erstelle das initiale Objekt\nconst result = {\n  title: titlePart ? titlePart.replace('Title:', '').trim() : 'Default Title',\n  tags: tagsPart ? tagsPart.trim() : 'Default, Tags',\n  descriptionHashtags: hashtagsPart ? hashtagsPart.trim() : '#default'\n};\n\n// --- FINALE BEREINIGUNG: KÜRZEN, FORMATIEREN & SÄUBERN ---\nconst YOUTUBE_TAG_LIMIT = 500;\nlet finalTags = [];\nlet currentLength = 0;\nconst allTags = result.tags.split(',');\n\nfor (const tag of allTags) {\n  // Entferne alle verbotenen '#'-Zeichen aus dem Tag\n  const sanitizedTag = tag.trim().replace(/#/g, '');\n  if (sanitizedTag === \"\") continue;\n\n  // Prüfe, ob das Hinzufügen des nächsten Tags (plus Komma) das Limit sprengen würde\n  // Korrektur: Wir rechnen +1 (nur für das Komma), nicht +2\n  if (currentLength + sanitizedTag.length + 1 <= YOUTUBE_TAG_LIMIT) {\n    finalTags.push(sanitizedTag);\n    // Addiere die Länge des Tags + 1 (für das Komma)\n    currentLength += sanitizedTag.length + 1;\n  } else {\n    break;\n  }\n}\n\n// Fügt das Array zu einem einzigen String zusammen, OHNE Leerzeichen\nresult.tags = finalTags.join(',');\n\n// Gib die sauberen Daten an den nächsten Knoten weiter\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        176
+      ],
+      "id": "11789d0b-6273-4857-bca0-34108bd7a209",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "update",
+        "videoId": "={{ $('Upload a video').item.json.uploadId }}",
+        "title": "={{ $('Google Drive Trigger').item.json.name }}",
+        "regionCode": "DE",
+        "categoryId": "1",
+        "updateFields": {
+          "description": "={{ $('Google Drive Trigger').item.json.name }}\nKI generierter Inhalt\n",
+          "privacyStatus": "private",
+          "tags": "="
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "6e18b7ac-772b-41b4-b47f-ef78951c009a",
+      "name": "Update a video",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "5fgmBi9CVnv1eawf",
+          "name": "Nulty Little"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        0
+      ],
+      "id": "bda9d061-99c8-4ce0-a55c-55ffa8c98ab5",
+      "name": "Wait",
+      "webhookId": "e10f7402-c29e-484e-8f7a-f0244aae0c89"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        0
+      ],
+      "id": "f3ffb2d4-fb67-4023-ae47-64c711b43523",
+      "name": "Wait1",
+      "webhookId": "46068931-8193-460f-be21-424d6ef8d451"
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2448,
+        0
+      ],
+      "id": "21b19e9c-7380-4e2d-b06c-ae6be46e27ce",
+      "name": "Delete a file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eUeP5ePsKBKmx9Go",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        208
+      ],
+      "id": "7707e958-51ee-41db-9f36-2ac533ca71be",
+      "name": "Think"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a video": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        []
+      ]
+    },
+    "Update a video": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Update a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Delete a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a file": {
+      "main": [
+        []
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0a9eabdd-b2a4-42a6-91d0-57f9a97d1816",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "98d9c3a8e6cf9c2d8239846b0856d82556234ab318ea0cce69cf3ae11b514514"
+  },
+  "id": "DXjG1cuWrKkmDMFt",
+  "tags": [
+    {
+      "createdAt": "2025-09-08T22:59:18.524Z",
+      "updatedAt": "2025-09-08T22:59:18.524Z",
+      "id": "oDPiZUYqKztuoHl7",
+      "name": "YouTube"
+    }
+  ]
+}
