@@ -4,7 +4,7 @@ Willkommen in meinem Projekt-Repository! Hier präsentiere ich zwei fortschrittl
 
 ---
 
-## 1. KI-gestützte YouTube-Upload & SEO-Pipeline (ThommyEight)
+## 1. YouTube Upload Automatisierung
 
 ![YouTube Upload Automation](Bild%20Youtube-Upload-Automation.png)
 
