@@ -28,7 +28,7 @@ Entwicklung eines vollautomatisierten Workflows für den YouTube-Kanal „Thommy
 
 ## 2. Automatisierter Cloud-to-YouTube Workflow (Nulty Little)
 
-![YouTube Upload Automation](Bild%20YouTube-Upload-Automation.png)
+![YouTube Upload Automation](Bild%20Youtube-Upload-Automation.png)
 
 **Beschreibung:**
 Eine effiziente, ressourcenschonende End-to-End-Upload-Pipeline für den YouTube-Kanal „Nulty Little“. Dieser Workflow fokussiert sich auf automatisiertes Cloud-Management und nutzt Google Gemini als KI-Engine zur Textverarbeitung.
